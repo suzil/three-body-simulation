@@ -1,0 +1,9 @@
+[package]
+name = "three_body"
+version = "0.1.0"
+authors = ["Susannah Klaneček <suzil@protonmail.ch>"]
+edition = "2018"
+
+[dependencies]
+bevy = "0.4.0"
+ndarray = "0.14.0"
