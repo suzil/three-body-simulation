@@ -1,7 +1,8 @@
 use bevy::prelude::*;
+use bevy::render::pass::ClearColor;
 use ndarray::prelude::*;
 
-struct Planet;
+struct Star;
 
 struct State {
     position: Array1<f32>,
@@ -9,60 +10,75 @@ struct State {
     mass: f32,
 }
 struct Materials {
-    planet_material: Handle<ColorMaterial>,
+    star_material: Handle<ColorMaterial>,
 }
 
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
+        .add_resource(WindowDescriptor {
+            title: "Three Celestial Bodies".to_string(),
+            width: 1000.0,
+            height: 800.0,
+            ..Default::default()
+        })
+        .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_startup_system(setup.system())
-        .add_startup_stage("game_steup", SystemStage::single(spawn_planets.system()))
-        .add_system(planet_movement.system())
+        .add_startup_stage(
+            "simulation_setup",
+            SystemStage::single(spawn_stars.system()),
+        )
+        .add_system(star_movement.system())
         .add_system(position_translation.system())
         .run();
 }
 
-fn setup(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(
+    commands: &mut Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let texture_handle = asset_server.load("blue_star.png");
     commands
         .spawn(Camera2dBundle::default())
         .insert_resource(Materials {
-            planet_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into()),
+            star_material: materials.add(texture_handle.into()),
         });
 }
 
-fn spawn_planets(commands: &mut Commands, materials: Res<Materials>) {
+fn spawn_stars(commands: &mut Commands, materials: Res<Materials>) {
     commands
         .spawn(SpriteBundle {
-            material: materials.planet_material.clone(),
-            sprite: Sprite::new(Vec2::new(20.0, 20.0)),
+            material: materials.star_material.clone(),
+            transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Planet)
+        .with(Star)
         .with(State {
-            position: array![100.0, -100.0],
-            momentum: array![0.0, 2.0],
+            position: array![200.0, 0.0],
+            momentum: array![0.0, 20.0],
             mass: 1.0,
         })
         .spawn(SpriteBundle {
-            material: materials.planet_material.clone(),
-            sprite: Sprite::new(Vec2::new(20.0, 20.0)),
+            material: materials.star_material.clone(),
+            transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Planet)
+        .with(Star)
         .with(State {
-            position: array![100.0, 100.0],
-            momentum: array![2.0, 2.0],
-            mass: 1.0,
+            position: array![0.0, 0.0],
+            momentum: array![5.0, 0.0],
+            mass: 10.0,
         })
         .spawn(SpriteBundle {
-            material: materials.planet_material.clone(),
-            sprite: Sprite::new(Vec2::new(20.0, 20.0)),
+            material: materials.star_material.clone(),
+            transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Planet)
+        .with(Star)
         .with(State {
-            position: array![-100.0, 0.0],
-            momentum: array![-2.0, 0.0],
+            position: array![-200.0, 0.0],
+            momentum: array![0.0, -20.0],
             mass: 1.0,
         });
 }
@@ -81,9 +97,9 @@ fn norm(vector: &Array1<f32>) -> Array1<f32> {
     vector / magnitude(&vector)
 }
 
-fn planet_movement(mut planet_states: Query<&mut State, With<Planet>>) {
+fn star_movement(mut star_states: Query<&mut State, With<Star>>) {
     let mut all_states = vec![];
-    for state in planet_states.iter_mut() {
+    for state in star_states.iter_mut() {
         all_states.push(state);
     }
 
