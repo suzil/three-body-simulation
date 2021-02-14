@@ -16,6 +16,7 @@ struct Materials {
 
 struct UiState {
     started: bool,
+    playing: bool,
 }
 
 fn main() {
@@ -48,15 +49,22 @@ fn setup(
         .insert_resource(Materials {
             star_material: materials.add(texture_handle.into()),
         })
-        .insert_resource(UiState { started: false });
+        .insert_resource(UiState {
+            started: false,
+            playing: false,
+        });
 }
 
 fn ui(mut ui_state: ResMut<UiState>, mut egui_context: ResMut<EguiContext>) {
     let ctx = &mut egui_context.ctx;
     egui::Window::new("Control Panel").show(ctx, |ui| {
-        ui.set_enabled(!ui_state.started);
-        if ui.button("Start").clicked() {
+        let mut ui_button_text = "▶ Play";
+        if ui_state.started && ui_state.playing {
+            ui_button_text = "⏸ Pause"
+        }
+        if ui.button(ui_button_text).clicked() {
             ui_state.started = true;
+            ui_state.playing = !ui_state.playing;
         };
     });
 }
@@ -113,7 +121,7 @@ fn norm(vector: &Array1<f32>) -> Array1<f32> {
 }
 
 fn star_movement(mut star_states: Query<&mut State, With<Star>>, ui_state: Res<UiState>) {
-    if !ui_state.started {
+    if !ui_state.playing {
         return;
     }
 
