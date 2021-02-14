@@ -74,64 +74,114 @@ fn ui(
             for mut star_b in star_b_query.iter_mut() {
                 for mut star_c in star_c_query.iter_mut() {
                     ui.heading("Star A");
+                    ui.add(
+                        egui::Slider::f32(&mut star_a.momentum[0], -100.0..=100.0)
+                            .text("Momentum (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_a.momentum[1], -100.0..=100.0)
+                            .text("Momentum (y)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_a.position[0], -500.0..=500.0)
+                            .text("Position (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_a.position[1], -500.0..=500.0)
+                            .text("Position (y)"),
+                    );
                     ui.add(egui::Slider::f32(&mut star_a.mass, 1.0..=100.0).text("mass"));
                     ui.heading("Star B");
+                    ui.add(
+                        egui::Slider::f32(&mut star_b.momentum[0], -100.0..=100.0)
+                            .text("Momentum (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_b.momentum[1], -100.0..=100.0)
+                            .text("Momentum (y)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_b.position[0], -500.0..=500.0)
+                            .text("Position (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_b.position[1], -500.0..=500.0)
+                            .text("Position (y)"),
+                    );
                     ui.add(egui::Slider::f32(&mut star_b.mass, 1.0..=100.0).text("mass"));
                     ui.heading("Star C");
+                    ui.add(
+                        egui::Slider::f32(&mut star_c.momentum[0], -100.0..=100.0)
+                            .text("Momentum (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_c.momentum[1], -100.0..=100.0)
+                            .text("Momentum (y)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_c.position[0], -500.0..=500.0)
+                            .text("Position (x)"),
+                    );
+                    ui.add(
+                        egui::Slider::f32(&mut star_c.position[1], -500.0..=500.0)
+                            .text("Position (y)"),
+                    );
                     ui.add(egui::Slider::f32(&mut star_c.mass, 1.0..=100.0).text("mass"));
 
-                    let mut ui_button_text = "▶ Play";
-                    if ui_state.started && ui_state.playing {
-                        ui_button_text = "⏸ Pause"
-                    }
-                    if ui.button(ui_button_text).clicked() {
-                        ui_state.started = true;
-                        ui_state.playing = !ui_state.playing;
-                    };
-                    if ui.button("Reset").clicked() {
-                        for star in stars_query.iter() {
-                            commands.despawn(star);
+                    ui.horizontal(|ui| {
+                        let mut ui_button_text = "▶ Play";
+                        if ui_state.started && ui_state.playing {
+                            ui_button_text = "⏸ Pause"
                         }
-                        // TODO: Maybe could trigger a reset event and have it
-                        // without duplicating code?
-                        commands
-                            .spawn(SpriteBundle {
-                                material: materials.star_material.clone(),
-                                transform: Transform::from_scale(Vec3::splat(0.3)),
-                                ..Default::default()
-                            })
-                            .with(StarA)
-                            .with(Star {
-                                position: array![200.0, 0.0],
-                                momentum: array![0.0, 20.0],
-                                mass: 1.0,
-                            })
-                            .spawn(SpriteBundle {
-                                material: materials.star_material.clone(),
-                                transform: Transform::from_scale(Vec3::splat(0.3)),
-                                ..Default::default()
-                            })
-                            .with(StarB)
-                            .with(Star {
-                                position: array![0.0, 0.0],
-                                momentum: array![5.0, 0.0],
-                                mass: 10.0,
-                            })
-                            .spawn(SpriteBundle {
-                                material: materials.star_material.clone(),
-                                transform: Transform::from_scale(Vec3::splat(0.3)),
-                                ..Default::default()
-                            })
-                            .with(StarC)
-                            .with(Star {
-                                position: array![-200.0, 0.0],
-                                momentum: array![0.0, -20.0],
-                                mass: 1.0,
-                            });
+                        if ui.button(ui_button_text).clicked() {
+                            ui_state.started = true;
+                            ui_state.playing = !ui_state.playing;
+                        };
+                        if ui.button("Reset").clicked() {
+                            for star in stars_query.iter() {
+                                commands.despawn(star);
+                            }
+                            // TODO: Maybe could trigger a reset event and have it
+                            // without duplicating code?
+                            commands
+                                .spawn(SpriteBundle {
+                                    material: materials.star_material.clone(),
+                                    transform: Transform::from_scale(Vec3::splat(0.3)),
+                                    ..Default::default()
+                                })
+                                .with(StarA)
+                                .with(Star {
+                                    position: array![200.0, 0.0],
+                                    momentum: array![0.0, 20.0],
+                                    mass: 1.0,
+                                })
+                                .spawn(SpriteBundle {
+                                    material: materials.star_material.clone(),
+                                    transform: Transform::from_scale(Vec3::splat(0.3)),
+                                    ..Default::default()
+                                })
+                                .with(StarB)
+                                .with(Star {
+                                    position: array![0.0, 0.0],
+                                    momentum: array![5.0, 0.0],
+                                    mass: 10.0,
+                                })
+                                .spawn(SpriteBundle {
+                                    material: materials.star_material.clone(),
+                                    transform: Transform::from_scale(Vec3::splat(0.3)),
+                                    ..Default::default()
+                                })
+                                .with(StarC)
+                                .with(Star {
+                                    position: array![-200.0, 0.0],
+                                    momentum: array![0.0, -20.0],
+                                    mass: 1.0,
+                                });
 
-                        ui_state.started = false;
-                        ui_state.playing = false;
-                    }
+                            ui_state.started = false;
+                            ui_state.playing = false;
+                        }
+                    });
                 }
             }
         }
