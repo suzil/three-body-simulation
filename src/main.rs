@@ -3,16 +3,19 @@ use bevy::render::pass::ClearColor;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 use ndarray::prelude::*;
 
-struct Star;
-
-struct State {
+struct Star {
     position: Array1<f32>,
     momentum: Array1<f32>,
     mass: f32,
 }
+
 struct Materials {
     star_material: Handle<ColorMaterial>,
 }
+
+struct StarA;
+struct StarB;
+struct StarC;
 
 struct UiState {
     started: bool,
@@ -55,17 +58,36 @@ fn setup(
         });
 }
 
-fn ui(mut ui_state: ResMut<UiState>, mut egui_context: ResMut<EguiContext>) {
+fn ui(
+    mut ui_state: ResMut<UiState>,
+    mut egui_context: ResMut<EguiContext>,
+    mut star_a_query: Query<&mut Star, With<StarA>>,
+    mut star_b_query: Query<&mut Star, With<StarB>>,
+    mut star_c_query: Query<&mut Star, With<StarC>>,
+) {
     let ctx = &mut egui_context.ctx;
     egui::Window::new("Control Panel").show(ctx, |ui| {
-        let mut ui_button_text = "▶ Play";
-        if ui_state.started && ui_state.playing {
-            ui_button_text = "⏸ Pause"
+        for mut star_a in star_a_query.iter_mut() {
+            for mut star_b in star_b_query.iter_mut() {
+                for mut star_c in star_c_query.iter_mut() {
+                    ui.heading("Star A");
+                    ui.add(egui::Slider::f32(&mut star_a.mass, 1.0..=100.0).text("mass"));
+                    ui.heading("Star B");
+                    ui.add(egui::Slider::f32(&mut star_b.mass, 1.0..=100.0).text("mass"));
+                    ui.heading("Star C");
+                    ui.add(egui::Slider::f32(&mut star_c.mass, 1.0..=100.0).text("mass"));
+
+                    let mut ui_button_text = "▶ Play";
+                    if ui_state.started && ui_state.playing {
+                        ui_button_text = "⏸ Pause"
+                    }
+                    if ui.button(ui_button_text).clicked() {
+                        ui_state.started = true;
+                        ui_state.playing = !ui_state.playing;
+                    };
+                }
+            }
         }
-        if ui.button(ui_button_text).clicked() {
-            ui_state.started = true;
-            ui_state.playing = !ui_state.playing;
-        };
     });
 }
 
@@ -76,8 +98,8 @@ fn spawn_stars(commands: &mut Commands, materials: Res<Materials>) {
             transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Star)
-        .with(State {
+        .with(StarA)
+        .with(Star {
             position: array![200.0, 0.0],
             momentum: array![0.0, 20.0],
             mass: 1.0,
@@ -87,8 +109,8 @@ fn spawn_stars(commands: &mut Commands, materials: Res<Materials>) {
             transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Star)
-        .with(State {
+        .with(StarB)
+        .with(Star {
             position: array![0.0, 0.0],
             momentum: array![5.0, 0.0],
             mass: 10.0,
@@ -98,17 +120,17 @@ fn spawn_stars(commands: &mut Commands, materials: Res<Materials>) {
             transform: Transform::from_scale(Vec3::splat(0.3)),
             ..Default::default()
         })
-        .with(Star)
-        .with(State {
+        .with(StarC)
+        .with(Star {
             position: array![-200.0, 0.0],
             momentum: array![0.0, -20.0],
             mass: 1.0,
         });
 }
 
-fn position_translation(mut query: Query<(&State, &mut Transform)>) {
-    for (state, mut transform) in query.iter_mut() {
-        transform.translation = Vec3::new(state.position[0], state.position[1], 0.0);
+fn position_translation(mut query: Query<(&Star, &mut Transform)>) {
+    for (star, mut transform) in query.iter_mut() {
+        transform.translation = Vec3::new(star.position[0], star.position[1], 0.0);
     }
 }
 
@@ -120,39 +142,42 @@ fn norm(vector: &Array1<f32>) -> Array1<f32> {
     vector / magnitude(&vector)
 }
 
-fn star_movement(mut star_states: Query<&mut State, With<Star>>, ui_state: Res<UiState>) {
+fn star_movement(
+    mut star_a_query: Query<&mut Star, With<StarA>>,
+    mut star_b_query: Query<&mut Star, With<StarB>>,
+    mut star_c_query: Query<&mut Star, With<StarC>>,
+    ui_state: Res<UiState>,
+) {
     if !ui_state.playing {
         return;
     }
 
-    let mut all_states = vec![];
-    for state in star_states.iter_mut() {
-        all_states.push(state);
+    for mut star_a in star_a_query.iter_mut() {
+        for mut star_b in star_b_query.iter_mut() {
+            for mut star_c in star_c_query.iter_mut() {
+                const G: f32 = 10000.0;
+                const DT: f32 = 0.1;
+
+                let r12 = star_b.position.clone() - star_a.position.clone();
+                let r13 = star_c.position.clone() - star_a.position.clone();
+                let r23 = star_c.position.clone() - star_b.position.clone();
+
+                let f12 = -G * star_a.mass * star_b.mass / magnitude(&r12).powi(2) * norm(&r12);
+                let f21 = -f12.clone();
+                let f13 = -G * star_a.mass * star_c.mass / magnitude(&r13).powi(2) * norm(&r13);
+                let f23 = -G * star_b.mass * star_c.mass / magnitude(&r23).powi(2) * norm(&r23);
+
+                star_a.momentum = star_a.momentum.clone() + (f21.clone() - f13.clone()) * DT;
+                star_b.momentum = star_b.momentum.clone() + (f12.clone() - f23.clone()) * DT;
+                star_c.momentum = star_c.momentum.clone() + (f13.clone() + f23.clone()) * DT;
+
+                star_a.position =
+                    star_a.position.clone() + star_a.momentum.clone() * DT / star_a.mass;
+                star_b.position =
+                    star_b.position.clone() + star_b.momentum.clone() * DT / star_b.mass;
+                star_c.position =
+                    star_c.position.clone() + star_c.momentum.clone() * DT / star_c.mass;
+            }
+        }
     }
-    if all_states.len() != 3 {
-        return;
-    }
-
-    const G: f32 = 10000.0;
-    const DT: f32 = 0.1;
-
-    let r12 = all_states[1].position.clone() - all_states[0].position.clone();
-    let r13 = all_states[2].position.clone() - all_states[0].position.clone();
-    let r23 = all_states[2].position.clone() - all_states[1].position.clone();
-
-    let f12 = -G * all_states[0].mass * all_states[1].mass / magnitude(&r12).powi(2) * norm(&r12);
-    let f21 = -f12.clone();
-    let f13 = -G * all_states[0].mass * all_states[2].mass / magnitude(&r13).powi(2) * norm(&r13);
-    let f23 = -G * all_states[1].mass * all_states[2].mass / magnitude(&r23).powi(2) * norm(&r23);
-
-    all_states[0].momentum = all_states[0].momentum.clone() + (f21.clone() - f13.clone()) * DT;
-    all_states[1].momentum = all_states[1].momentum.clone() + (f12.clone() - f23.clone()) * DT;
-    all_states[2].momentum = all_states[2].momentum.clone() + (f13.clone() + f23.clone()) * DT;
-
-    all_states[0].position =
-        all_states[0].position.clone() + all_states[0].momentum.clone() * DT / all_states[0].mass;
-    all_states[1].position =
-        all_states[1].position.clone() + all_states[1].momentum.clone() * DT / all_states[1].mass;
-    all_states[2].position =
-        all_states[2].position.clone() + all_states[2].momentum.clone() * DT / all_states[2].mass;
 }
