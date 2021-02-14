@@ -141,7 +141,7 @@ fn ui(
                             for star in stars_query.iter() {
                                 commands.despawn(star);
                             }
-                            // TODO: Maybe could trigger a reset event and have it
+                            // TODO: Maybe it could trigger a reset event and have it
                             // without duplicating code?
                             commands
                                 .spawn(SpriteBundle {
